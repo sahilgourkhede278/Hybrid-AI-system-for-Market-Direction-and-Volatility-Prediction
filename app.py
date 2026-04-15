@@ -36,7 +36,6 @@ if not cookies.ready():
 # STOCK MASTER LIST (50+ STOCKS)
 # =====================================================
 STOCKS = {
-    "NIFTY 50": "^NSEI",
     "Reliance": "RELIANCE.NS",
     "TCS": "TCS.NS",
     "Infosys": "INFY.NS",
