@@ -1,7 +1,9 @@
+import uuid
+from streamlit_cookies_manager import EncryptedCookieManager
+from zoneinfo import ZoneInfo
 import os
 import sqlite3
 import hashlib
-from zoneinfo import ZoneInfo
 from datetime import datetime, date, timedelta
 import numpy as np
 import pandas as pd
@@ -22,6 +24,13 @@ from streamlit_autorefresh import st_autorefresh
 # =====================================================
 st.set_page_config(page_title="AI Market Dashboard", layout="wide")
 
+cookies = EncryptedCookieManager(
+    prefix="ai_market_dashboard/",
+    password="change-this-to-a-strong-password"
+)
+
+if not cookies.ready():
+    st.stop()
 
 # =====================================================
 # STOCK MASTER LIST (50+ STOCKS)
@@ -254,6 +263,94 @@ def verify_user(username, password):
         }
     return None
 
+def get_user_by_id(user_id):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT id, full_name, username
+        FROM users
+        WHERE id = ?
+    """, (user_id,))
+    user = cur.fetchone()
+    conn.close()
+
+    if user:
+        return {
+            "id": user[0],
+            "full_name": user[1],
+            "username": user[2]
+        }
+    return None
+
+
+def create_user_session(user_id):
+    token = str(uuid.uuid4())
+    expiry = datetime.now() + timedelta(days=7)
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        INSERT INTO user_sessions (session_token, user_id, expires_at)
+        VALUES (?, ?, ?)
+    """, (token, user_id, expiry.isoformat()))
+
+    conn.commit()
+    conn.close()
+    return token
+
+
+def get_user_from_session(token):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT user_id, expires_at
+        FROM user_sessions
+        WHERE session_token = ?
+    """, (token,))
+    row = cur.fetchone()
+
+    if not row:
+        conn.close()
+        return None
+
+    user_id, expires_at = row
+
+    try:
+        expiry_dt = datetime.fromisoformat(expires_at)
+    except Exception:
+        conn.close()
+        return None
+
+    if datetime.now() > expiry_dt:
+        cur.execute("""
+            DELETE FROM user_sessions
+            WHERE session_token = ?
+        """, (token,))
+        conn.commit()
+        conn.close()
+        return None
+
+    conn.close()
+    return get_user_by_id(user_id)
+
+
+def delete_user_session(token):
+    if not token:
+        return
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        DELETE FROM user_sessions
+        WHERE session_token = ?
+    """, (token,))
+
+    conn.commit()
+    conn.close()
 
 # =====================================================
 # PORTFOLIO FUNCTIONS
@@ -679,6 +776,14 @@ def go_to_page(page_name):
 
 
 def logout_user():
+    token = cookies.get("session_token")
+
+    if token:
+        delete_user_session(token)
+
+    cookies["session_token"] = ""
+    cookies.save()
+
     st.session_state.logged_in = False
     st.session_state.current_user = None
     st.session_state.page = "login"
@@ -769,6 +874,22 @@ query_page = st.query_params.get("page", None)
 if query_page:
     st.session_state.page = query_page
 
+
+cookie_token = cookies.get("session_token")
+
+if cookie_token and not st.session_state.logged_in:
+    saved_user = get_user_from_session(cookie_token)
+
+    if saved_user:
+        st.session_state.logged_in = True
+        st.session_state.current_user = saved_user
+
+        if st.session_state.page == "login":
+            st.session_state.page = "dashboard"
+    else:
+        cookies["session_token"] = ""
+        cookies.save()
+
 # =====================================================
 # PAGE 0 : LOGIN / SIGNUP
 # =====================================================
@@ -792,6 +913,12 @@ if not st.session_state.logged_in:
                     st.session_state.logged_in = True
                     st.session_state.current_user = user
                     st.session_state.page = "dashboard"
+
+                    token = create_user_session(user["id"])
+                    cookies["session_token"] = token
+                    cookies.save()
+
+                    st.query_params["page"] = "dashboard"
                     st.success("Login successful")
                     st.rerun()
                 else:
