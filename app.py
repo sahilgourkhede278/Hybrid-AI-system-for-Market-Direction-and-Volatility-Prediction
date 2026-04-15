@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import hashlib
+from zoneinfo import ZoneInfo
 from datetime import datetime, date, timedelta
 import numpy as np
 import pandas as pd
@@ -651,15 +652,16 @@ def fetch_live_intraday_data(ticker_symbol):
 # HELPERS
 # =====================================================
 def is_market_open():
-    now = datetime.now()
+    now = datetime.now(ZoneInfo("Asia/Kolkata"))
 
     if now.weekday() >= 5:
         return False
 
-    market_open = now.replace(hour=9, minute=15, second=0, microsecond=0)
-    market_close = now.replace(hour=15, minute=30, second=0, microsecond=0)
+    current_time = now.time()
+    market_open = datetime.strptime("09:15", "%H:%M").time()
+    market_close = datetime.strptime("15:30", "%H:%M").time()
 
-    return market_open <= now <= market_close
+    return market_open <= current_time <= market_close
 
 
 def is_live_market_tradable(ticker_symbol):
