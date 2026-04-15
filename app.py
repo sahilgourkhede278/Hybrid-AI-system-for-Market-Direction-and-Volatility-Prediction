@@ -674,6 +674,7 @@ def is_live_market_tradable(ticker_symbol):
 
 def go_to_page(page_name):
     st.session_state.page = page_name
+    st.query_params["page"] = page_name
     st.rerun()
 
 
@@ -681,6 +682,7 @@ def logout_user():
     st.session_state.logged_in = False
     st.session_state.current_user = None
     st.session_state.page = "login"
+    st.query_params.clear()
     st.rerun()
 
 
@@ -762,6 +764,10 @@ if "current_user" not in st.session_state:
 if "page" not in st.session_state:
     st.session_state.page = "login"
 
+query_page = st.query_params.get("page", None)
+
+if query_page:
+    st.session_state.page = query_page
 
 # =====================================================
 # PAGE 0 : LOGIN / SIGNUP
