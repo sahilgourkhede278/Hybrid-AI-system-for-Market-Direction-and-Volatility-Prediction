@@ -102,7 +102,7 @@ PRACTICE_STOCKS = {k: v for k, v in STOCKS.items() if k != "NIFTY 50"}
 # DATABASE
 # =====================================================
 def get_connection():
-    return psycopg2.connect(st.secrets["postgresql://postgres.hohbxbkypuyxphxcyufa:SahilGourkhede@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres"])
+    return psycopg2.connect(st.secrets["DATABASE_URL"])
 
 
 def init_db():
