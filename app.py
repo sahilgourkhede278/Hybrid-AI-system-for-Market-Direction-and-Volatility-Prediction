@@ -2,7 +2,8 @@ import uuid
 from streamlit_cookies_manager import EncryptedCookieManager
 from zoneinfo import ZoneInfo
 import os
-import sqlite3
+import psycopg2
+from psycopg2 import IntegrityError
 import hashlib
 from datetime import datetime, date, timedelta
 import numpy as np
@@ -100,15 +101,8 @@ PRACTICE_STOCKS = {k: v for k, v in STOCKS.items() if k != "NIFTY 50"}
 # =====================================================
 # DATABASE
 # =====================================================
-DB_NAME = os.path.join(os.getcwd(), "market_app.db")
-
 def get_connection():
-    conn = sqlite3.connect(DB_NAME, check_same_thread=False, timeout=30)
-    try:
-        conn.execute("PRAGMA journal_mode=WAL;")
-    except:
-        pass
-    return conn
+    return psycopg2.connect(st.secrets["postgresql://postgres.hohbxbkypuyxphxcyufa:SahilGourkhede@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres"])
 
 
 def init_db():
@@ -117,7 +111,7 @@ def init_db():
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             full_name TEXT NOT NULL,
             username TEXT NOT NULL UNIQUE,
             password_hash TEXT NOT NULL,
@@ -127,74 +121,70 @@ def init_db():
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS portfolio (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id),
             stock TEXT NOT NULL,
             ticker TEXT NOT NULL,
             qty INTEGER NOT NULL,
             buying_date TEXT NOT NULL,
-            buying_price REAL NOT NULL,
-            FOREIGN KEY (user_id) REFERENCES users(id)
+            buying_price DOUBLE PRECISION NOT NULL
         )
     """)
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS dummy_accounts (
-            user_id INTEGER PRIMARY KEY,
-            balance REAL NOT NULL DEFAULT 100000,
-            FOREIGN KEY (user_id) REFERENCES users(id)
+            user_id INTEGER PRIMARY KEY REFERENCES users(id),
+            balance DOUBLE PRECISION NOT NULL DEFAULT 100000
         )
     """)
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS dummy_portfolio (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id),
             stock TEXT NOT NULL,
-            price REAL NOT NULL,
-            qty INTEGER NOT NULL,
-            FOREIGN KEY (user_id) REFERENCES users(id)
+            price DOUBLE PRECISION NOT NULL,
+            qty INTEGER NOT NULL
         )
     """)
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS networth_data (
-            user_id INTEGER PRIMARY KEY,
-            cash REAL NOT NULL DEFAULT 0,
-            investments REAL NOT NULL DEFAULT 0,
-            property_val REAL NOT NULL DEFAULT 0,
-            vehicles REAL NOT NULL DEFAULT 0,
-            gold REAL NOT NULL DEFAULT 0,
-            home_loan REAL NOT NULL DEFAULT 0,
-            home_rate REAL NOT NULL DEFAULT 0,
+            user_id INTEGER PRIMARY KEY REFERENCES users(id),
+            cash DOUBLE PRECISION NOT NULL DEFAULT 0,
+            investments DOUBLE PRECISION NOT NULL DEFAULT 0,
+            property_val DOUBLE PRECISION NOT NULL DEFAULT 0,
+            vehicles DOUBLE PRECISION NOT NULL DEFAULT 0,
+            gold DOUBLE PRECISION NOT NULL DEFAULT 0,
+            home_loan DOUBLE PRECISION NOT NULL DEFAULT 0,
+            home_rate DOUBLE PRECISION NOT NULL DEFAULT 0,
             home_years INTEGER NOT NULL DEFAULT 0,
-            car_loan REAL NOT NULL DEFAULT 0,
-            car_rate REAL NOT NULL DEFAULT 0,
+            car_loan DOUBLE PRECISION NOT NULL DEFAULT 0,
+            car_rate DOUBLE PRECISION NOT NULL DEFAULT 0,
             car_years INTEGER NOT NULL DEFAULT 0,
-            education_loan REAL NOT NULL DEFAULT 0,
-            education_rate REAL NOT NULL DEFAULT 0,
+            education_loan DOUBLE PRECISION NOT NULL DEFAULT 0,
+            education_rate DOUBLE PRECISION NOT NULL DEFAULT 0,
             education_years INTEGER NOT NULL DEFAULT 0,
-            credit_card REAL NOT NULL DEFAULT 0,
-            credit_rate REAL NOT NULL DEFAULT 0,
+            credit_card DOUBLE PRECISION NOT NULL DEFAULT 0,
+            credit_rate DOUBLE PRECISION NOT NULL DEFAULT 0,
             credit_years INTEGER NOT NULL DEFAULT 0,
-            other_loan REAL NOT NULL DEFAULT 0,
-            other_rate REAL NOT NULL DEFAULT 0,
+            other_loan DOUBLE PRECISION NOT NULL DEFAULT 0,
+            other_rate DOUBLE PRECISION NOT NULL DEFAULT 0,
             other_years INTEGER NOT NULL DEFAULT 0,
-            updated_at TEXT NOT NULL,
-            FOREIGN KEY (user_id) REFERENCES users(id)
+            updated_at TEXT NOT NULL
         )
     """)
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS user_sessions (
             session_token TEXT PRIMARY KEY,
-            user_id INTEGER,
-            expires_at TEXT,
-            FOREIGN KEY (user_id) REFERENCES users(id)
+            user_id INTEGER REFERENCES users(id),
+            expires_at TEXT
         )
     """)
 
     conn.commit()
+    cur.close()
     conn.close()
 
 
@@ -212,13 +202,15 @@ def create_user(full_name, username, password):
     try:
         cur.execute("""
             INSERT INTO users (full_name, username, password_hash, created_at)
-            VALUES (?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s)
+            RETURNING id
         """, (full_name, username, hash_password(password), datetime.now().isoformat()))
-        user_id = cur.lastrowid
+
+        user_id = cur.fetchone()[0]
 
         cur.execute("""
             INSERT INTO dummy_accounts (user_id, balance)
-            VALUES (?, ?)
+            VALUES (%s, %s)
         """, (user_id, 100000.0))
 
         cur.execute("""
@@ -231,13 +223,17 @@ def create_user(full_name, username, password):
                 other_loan, other_rate, other_years,
                 updated_at
             )
-            VALUES (?, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ?)
+            VALUES (%s, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, %s)
         """, (user_id, datetime.now().isoformat()))
 
         conn.commit()
+        cur.close()
         conn.close()
         return True, "Account created successfully"
-    except sqlite3.IntegrityError:
+
+    except IntegrityError:
+        conn.rollback()
+        cur.close()
         conn.close()
         return False, "Username already exists"
 
@@ -249,9 +245,11 @@ def verify_user(username, password):
     cur.execute("""
         SELECT id, full_name, username, password_hash
         FROM users
-        WHERE username = ?
+        WHERE username = %s
     """, (username,))
     user = cur.fetchone()
+
+    cur.close()
     conn.close()
 
     if user and user[3] == hash_password(password):
@@ -269,7 +267,7 @@ def get_user_by_id(user_id):
     cur.execute("""
         SELECT id, full_name, username
         FROM users
-        WHERE id = ?
+        WHERE id = %s
     """, (user_id,))
     user = cur.fetchone()
     conn.close()
@@ -292,7 +290,7 @@ def create_user_session(user_id):
 
     cur.execute("""
         INSERT INTO user_sessions (session_token, user_id, expires_at)
-        VALUES (?, ?, ?)
+        VALUES (%s, %s, %s)
     """, (token, user_id, expiry.isoformat()))
 
     conn.commit()
@@ -307,7 +305,7 @@ def get_user_from_session(token):
     cur.execute("""
         SELECT user_id, expires_at
         FROM user_sessions
-        WHERE session_token = ?
+        WHERE session_token = %s
     """, (token,))
     row = cur.fetchone()
 
@@ -326,7 +324,7 @@ def get_user_from_session(token):
     if datetime.now() > expiry_dt:
         cur.execute("""
             DELETE FROM user_sessions
-            WHERE session_token = ?
+            WHERE session_token = %s
         """, (token,))
         conn.commit()
         conn.close()
@@ -345,7 +343,7 @@ def delete_user_session(token):
 
     cur.execute("""
         DELETE FROM user_sessions
-        WHERE session_token = ?
+        WHERE session_token = %s
     """, (token,))
 
     conn.commit()
@@ -359,7 +357,7 @@ def get_user_portfolio(user_id):
     query = """
         SELECT stock, ticker, qty, buying_date, buying_price
         FROM portfolio
-        WHERE user_id = ?
+        WHERE user_id = %s
     """
     df = pd.read_sql_query(query, conn, params=(user_id,))
     conn.close()
@@ -373,7 +371,7 @@ def add_or_update_portfolio(user_id, stock, ticker, qty, buying_date, buying_pri
     cur.execute("""
         SELECT id, qty, buying_price
         FROM portfolio
-        WHERE user_id = ? AND stock = ?
+        WHERE user_id = %s AND stock = %s
     """, (user_id, stock))
     row = cur.fetchone()
 
@@ -384,13 +382,13 @@ def add_or_update_portfolio(user_id, stock, ticker, qty, buying_date, buying_pri
 
         cur.execute("""
             UPDATE portfolio
-            SET qty = ?, buying_price = ?, buying_date = ?
-            WHERE id = ?
+            SET qty = %s, buying_price = %s, buying_date = %s
+            WHERE id = %s
         """, (new_qty, new_price, str(buying_date), row_id))
     else:
         cur.execute("""
             INSERT INTO portfolio (user_id, stock, ticker, qty, buying_date, buying_price)
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s)
         """, (user_id, stock, ticker, qty, str(buying_date), buying_price))
 
     conn.commit()
@@ -404,7 +402,7 @@ def get_dummy_balance(user_id):
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute("SELECT balance FROM dummy_accounts WHERE user_id = ?", (user_id,))
+    cur.execute("SELECT balance FROM dummy_accounts WHERE user_id = %s", (user_id,))
     row = cur.fetchone()
     conn.close()
 
@@ -417,8 +415,8 @@ def update_dummy_balance(user_id, new_balance):
 
     cur.execute("""
         UPDATE dummy_accounts
-        SET balance = ?
-        WHERE user_id = ?
+        SET balance = %s
+        WHERE user_id = %s
     """, (float(new_balance), user_id))
 
     conn.commit()
@@ -433,7 +431,7 @@ def get_dummy_portfolio(user_id):
             ROUND(SUM(price * qty) / SUM(qty), 2) AS price,
             SUM(qty) AS qty
         FROM dummy_portfolio
-        WHERE user_id = ?
+        WHERE user_id = %s
         GROUP BY stock
         ORDER BY stock
     """
@@ -448,7 +446,7 @@ def add_dummy_stock(user_id, stock, price, qty):
 
     cur.execute("""
         INSERT INTO dummy_portfolio (user_id, stock, price, qty)
-        VALUES (?, ?, ?, ?)
+        VALUES (%s, %s, %s, %s)
     """, (user_id, stock, float(price), int(qty)))
 
     conn.commit()
@@ -463,7 +461,7 @@ def sell_dummy_stock(user_id, stock, price, qty_to_sell):
         cur.execute("""
             SELECT id, qty
             FROM dummy_portfolio
-            WHERE user_id = ? AND stock = ?
+            WHERE user_id = %s AND stock = %s
             ORDER BY id ASC
         """, (user_id, stock))
         rows = cur.fetchall()
@@ -487,12 +485,12 @@ def sell_dummy_stock(user_id, stock, price, qty_to_sell):
                 break
 
             if row_qty <= remaining_to_sell:
-                cur.execute("DELETE FROM dummy_portfolio WHERE id = ?", (row_id,))
+                cur.execute("DELETE FROM dummy_portfolio WHERE id = %s", (row_id,))
                 remaining_to_sell -= row_qty
             else:
                 new_qty = row_qty - remaining_to_sell
                 cur.execute(
-                    "UPDATE dummy_portfolio SET qty = ? WHERE id = ?",
+                    "UPDATE dummy_portfolio SET qty = %s WHERE id = %s",
                     (new_qty, row_id)
                 )
                 remaining_to_sell = 0
@@ -500,7 +498,7 @@ def sell_dummy_stock(user_id, stock, price, qty_to_sell):
         sell_value = float(price) * int(qty_to_sell)
 
         cur.execute(
-            "SELECT balance FROM dummy_accounts WHERE user_id = ?",
+            "SELECT balance FROM dummy_accounts WHERE user_id = %s",
             (user_id,)
         )
         bal_row = cur.fetchone()
@@ -510,8 +508,8 @@ def sell_dummy_stock(user_id, stock, price, qty_to_sell):
 
         cur.execute("""
             UPDATE dummy_accounts
-            SET balance = ?
-            WHERE user_id = ?
+            SET balance = %s
+            WHERE user_id = %s
         """, (new_balance, user_id))
 
         conn.commit()
@@ -540,7 +538,7 @@ def get_networth_data(user_id):
             credit_card, credit_rate, credit_years,
             other_loan, other_rate, other_years
         FROM networth_data
-        WHERE user_id = ?
+        WHERE user_id = %s
     """, (user_id,))
 
     row = cur.fetchone()
@@ -607,7 +605,7 @@ def save_networth_data(
     cur = conn.cursor()
 
     cur.execute("""
-        INSERT OR REPLACE INTO networth_data (
+        INSERT INTO networth_data (
             user_id,
             cash, investments, property_val, vehicles, gold,
             home_loan, home_rate, home_years,
@@ -617,7 +615,29 @@ def save_networth_data(
             other_loan, other_rate, other_years,
             updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (user_id) DO UPDATE SET
+            cash = EXCLUDED.cash,
+            investments = EXCLUDED.investments,
+            property_val = EXCLUDED.property_val,
+            vehicles = EXCLUDED.vehicles,
+            gold = EXCLUDED.gold,
+            home_loan = EXCLUDED.home_loan,
+            home_rate = EXCLUDED.home_rate,
+            home_years = EXCLUDED.home_years,
+            car_loan = EXCLUDED.car_loan,
+            car_rate = EXCLUDED.car_rate,
+            car_years = EXCLUDED.car_years,
+            education_loan = EXCLUDED.education_loan,
+            education_rate = EXCLUDED.education_rate,
+            education_years = EXCLUDED.education_years,
+            credit_card = EXCLUDED.credit_card,
+            credit_rate = EXCLUDED.credit_rate,
+            credit_years = EXCLUDED.credit_years,
+            other_loan = EXCLUDED.other_loan,
+            other_rate = EXCLUDED.other_rate,
+            other_years = EXCLUDED.other_years,
+            updated_at = EXCLUDED.updated_at
     """, (
         user_id,
         float(cash), float(investments), float(property_val), float(vehicles), float(gold),
@@ -630,6 +650,7 @@ def save_networth_data(
     ))
 
     conn.commit()
+    cur.close()
     conn.close()
 
 
