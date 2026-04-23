@@ -1349,7 +1349,7 @@ elif st.session_state.page == "dummy_market":
 
     # refresh every 5 seconds
     if is_market_open():
-        st_autorefresh(interval=5000, key="dummy_market_refresh")
+        st_autorefresh(interval=8000, key="dummy_market_refresh")
 
     if is_live_market_tradable("RELIANCE.NS"):
         st.success("🟢 Market is Open")
