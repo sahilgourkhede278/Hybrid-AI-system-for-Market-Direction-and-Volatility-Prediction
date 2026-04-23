@@ -426,14 +426,12 @@ def update_dummy_balance(user_id, new_balance):
 def get_dummy_portfolio(user_id):
     conn = get_connection()
     query = """
-        SELECT
-            stock,
-            ROUND(SUM(price * qty) / SUM(qty), 2) AS price,
-            SUM(qty) AS qty
+        SELECT stock,
+               ROUND((SUM(price * qty) / SUM(qty))::numeric, 2) AS price,
+               SUM(qty) AS qty
         FROM dummy_portfolio
         WHERE user_id = %s
         GROUP BY stock
-        ORDER BY stock
     """
     df = pd.read_sql_query(query, conn, params=(user_id,))
     conn.close()
