@@ -897,7 +897,11 @@ def format_percentage(value):
 # =====================================================
 # INITIALIZE
 # =====================================================
-init_db()
+@st.cache_resource
+def initialize_database_once():
+    init_db()
+
+initialize_database_once()
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
