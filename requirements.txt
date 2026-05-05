@@ -7,3 +7,4 @@ scikit-learn
 streamlit-autorefresh
 streamlit-cookies-manager
 psycopg2-binary
+streamlit-keyup
