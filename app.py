@@ -27,6 +27,169 @@ from streamlit_autorefresh import st_autorefresh
 # =====================================================
 st.set_page_config(page_title="AI Market Dashboard", layout="wide")
 
+
+def apply_custom_ui():
+    st.markdown("""
+    <style>
+    .stApp {
+        background: linear-gradient(135deg, #020617 0%, #0f172a 45%, #111827 100%);
+        color: #f8fafc;
+    }
+
+    h1, h2, h3 {
+        color: #f8fafc !important;
+        font-weight: 800 !important;
+    }
+
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+
+    .custom-card {
+        background: rgba(255,255,255,0.08);
+        padding: 22px;
+        border-radius: 22px;
+        border: 1px solid rgba(255,255,255,0.12);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.28);
+        margin-bottom: 18px;
+    }
+
+    .hero-title {
+        font-size: 38px;
+        font-weight: 900;
+        background: linear-gradient(90deg, #38bdf8, #a78bfa, #22c55e);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 8px;
+    }
+
+    .hero-subtitle {
+        color: #cbd5e1;
+        font-size: 16px;
+        margin-bottom: 4px;
+    }
+
+    .section-badge {
+        display: inline-block;
+        background: rgba(59,130,246,0.18);
+        color: #bfdbfe;
+        padding: 7px 14px;
+        border-radius: 999px;
+        font-weight: 700;
+        margin-bottom: 10px;
+        border: 1px solid rgba(147,197,253,0.25);
+    }
+
+    .glass-panel {
+        background: rgba(255,255,255,0.07);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 0 10px 26px rgba(0,0,0,0.25);
+        margin-bottom: 16px;
+    }
+
+    .stMetric {
+        background: rgba(255,255,255,0.08);
+        padding: 18px;
+        border-radius: 18px;
+        border: 1px solid rgba(255,255,255,0.12);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    }
+
+    div.stButton > button {
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+        color: white;
+        border: none;
+        border-radius: 14px;
+        min-height: 46px;
+        font-weight: 800;
+        transition: 0.25s ease;
+    }
+
+    div.stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(37,99,235,0.45);
+        color: white;
+    }
+
+    div[data-testid="stLinkButton"] a {
+        background: linear-gradient(135deg, #16a34a, #22c55e);
+        color: white !important;
+        border-radius: 14px;
+        min-height: 46px;
+        font-weight: 800;
+        border: none;
+        text-decoration: none;
+        transition: 0.25s ease;
+    }
+
+    div[data-testid="stLinkButton"] a:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(34,197,94,0.45);
+    }
+
+    div[data-testid="stTextInput"] input,
+    div[data-testid="stNumberInput"] input,
+    div[data-testid="stDateInput"] input {
+        border-radius: 12px !important;
+        border: 1px solid rgba(255,255,255,0.18) !important;
+    }
+
+    div[data-testid="stSelectbox"] div {
+        border-radius: 12px !important;
+    }
+
+    div[data-testid="stDataFrame"] {
+        border-radius: 18px;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 10px;
+    }
+
+    .stTabs [data-baseweb="tab"] {
+        background: rgba(255,255,255,0.08);
+        border-radius: 14px;
+        color: #f8fafc;
+        font-weight: 800;
+        border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #2563eb, #7c3aed) !important;
+        color: white !important;
+    }
+
+    .trade-card {
+        background: linear-gradient(135deg, rgba(17,24,39,0.96), rgba(31,41,55,0.92));
+        padding: 22px;
+        border-radius: 18px;
+        border: 1px solid rgba(255,255,255,0.12);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+        margin-bottom: 20px;
+    }
+
+    .trade-title {
+        color: white;
+        font-size: 24px;
+        font-weight: 900;
+        margin-bottom: 6px;
+    }
+
+    .trade-subtitle {
+        color: #d1d5db;
+        font-size: 15px;
+        margin-bottom: 4px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+apply_custom_ui()
+
 cookies = EncryptedCookieManager(
     prefix="ai_market_dashboard/",
     password="change-this-to-a-strong-password"
@@ -938,7 +1101,13 @@ if cookie_token and not st.session_state.logged_in:
 # PAGE 0 : LOGIN / SIGNUP
 # =====================================================
 if not st.session_state.logged_in:
-    st.title("🔐 AI Market Dashboard Login")
+    st.markdown("""
+    <div class="custom-card">
+        <div class="section-badge">Secure Access</div>
+        <div class="hero-title">🔐 AI Market Dashboard Login</div>
+        <div class="hero-subtitle">Login or create an account to access AI prediction, portfolio tracking and dummy trading.</div>
+    </div>
+    """, unsafe_allow_html=True)
 
     login_tab, signup_tab = st.tabs(["Login", "Create Account"])
 
@@ -1045,7 +1214,13 @@ with top3:
 # =====================================================
 if st.session_state.page == "dashboard":
 
-    st.title("📊 AI Market Direction Dashboard")
+    st.markdown("""
+    <div class="custom-card">
+        <div class="section-badge">AI Market Dashboard</div>
+        <div class="hero-title">📊 AI Market Direction Dashboard</div>
+        <div class="hero-subtitle">Real-time stock insights, AI prediction, portfolio tracking and dummy trading in one platform.</div>
+    </div>
+    """, unsafe_allow_html=True)
     nav1, nav2, nav3 = st.columns(3)
 
     with nav1:
@@ -1265,10 +1440,16 @@ if st.session_state.page == "dashboard":
 # =====================================================
 elif st.session_state.page == "networth":
 
-    st.title("💰 Net Worth Calculator")
+    st.markdown("""
+    <div class="custom-card">
+        <div class="section-badge">Personal Finance</div>
+        <div class="hero-title">💰 Net Worth Calculator</div>
+        <div class="hero-subtitle">Calculate assets, liabilities and overall financial position with saved cloud data.</div>
+    </div>
+    """, unsafe_allow_html=True)
 
     if st.button("⬅ Back to Dashboard"):
-            go_to_page("dashboard")
+        go_to_page("dashboard")
 
     saved_networth = get_networth_data(user_id)
 
@@ -1402,7 +1583,13 @@ elif st.session_state.page == "networth":
 # =====================================================
 elif st.session_state.page == "dummy_market":
 
-    st.title("🧪 Dummy Market (Practice Trading)")
+    st.markdown("""
+    <div class="custom-card">
+        <div class="section-badge">Practice Trading</div>
+        <div class="hero-title">🧪 Dummy Market</div>
+        <div class="hero-subtitle">Practice buy and sell decisions using virtual money with live market prices.</div>
+    </div>
+    """, unsafe_allow_html=True)
 
     # refresh every 5 seconds
     if is_market_open():
@@ -1413,7 +1600,14 @@ elif st.session_state.page == "dummy_market":
     else:
         st.error("🔴 Market is Closed / Holiday")
 
-    back_col, trade_col = st.columns(2)
+    st.markdown("""
+    <div class="trade-card">
+        <div class="trade-title">🚀 Ready to Trade?</div>
+        <div class="trade-subtitle">Practice here with dummy money or continue to Upstox for real market access.</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    back_col, trade_col = st.columns([1, 1.4])
 
     with back_col:
         if st.button("⬅ Back to Dashboard", use_container_width=True):
@@ -1421,7 +1615,7 @@ elif st.session_state.page == "dummy_market":
     
     with trade_col:
         st.link_button(
-            "🚀 Start Trading Now",
+            "🚀 Start Trading Now on Upstox",
             "https://login.upstox.com/",
             use_container_width=True
         )
@@ -1620,7 +1814,13 @@ elif st.session_state.page == "dummy_market":
 # =====================================================
 elif st.session_state.page == "stock_info":
 
-    st.title("📚 Stock Information")
+    st.markdown("""
+    <div class="custom-card">
+        <div class="section-badge">Stock Research</div>
+        <div class="hero-title">📚 Stock Information</div>
+        <div class="hero-subtitle">Explore company details, historical trends, moving averages and volatility.</div>
+    </div>
+    """, unsafe_allow_html=True)
 
     if st.button("⬅ Back to Dashboard"):
         go_to_page("dashboard")
