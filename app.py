@@ -958,8 +958,16 @@ if not st.session_state.logged_in:
                 st.warning("Please fill all fields")
             elif signup_password != signup_confirm:
                 st.error("Passwords do not match")
-            elif len(signup_password) < 4:
-                st.warning("Password must be at least 4 characters")
+            elif (
+                len(signup_password) < 8
+                or not any(c.isupper() for c in signup_password)
+                or not any(c.islower() for c in signup_password)
+                or not any(c.isdigit() for c in signup_password)
+                or not any(c in "!@$%^&*+#" for c in signup_password)
+            ):
+                st.warning(
+                    "Password should be at least 8 characters and include uppercase, lowercase, number, and special character (!, @, $, %, ^, &, *, +, #)."
+                )
             else:
                 ok, msg = create_user(signup_name, signup_username, signup_password)
                 if ok:
