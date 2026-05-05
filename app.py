@@ -970,22 +970,22 @@ if not st.session_state.logged_in:
         signup_username = st.text_input("Choose Username", key="signup_username")
         signup_password = st.text_input("Choose Password", type="password", key="signup_password")
 
-        if signup_password:
-            strength = check_password_strength(signup_password)
+        strength = check_password_strength(signup_password) if signup_password else 0
+        progress = strength / 5
         
-            progress = strength / 5
+        st.progress(progress)
         
-            st.progress(progress)
+        if not signup_password:
+            st.caption("Password strength will appear here as you type.")
+        elif strength <= 2:
+            st.error("Weak Password ❌")
+        elif strength == 3 or strength == 4:
+            st.warning("Medium Password ⚠️")
+        else:
+            st.success("Strong Password ✅")
         
-            if strength <= 2:
-                st.error("Weak Password ❌")
-            elif strength == 3 or strength == 4:
-                st.warning("Medium Password ⚠️")
-            else:
-                st.success("Strong Password ✅")
-        
-            st.caption("Use at least 8 characters, uppercase, lowercase, number and special character (!, @, $, %, ^, &, *, +, #)")
-            
+        st.caption("Use at least 8 characters, uppercase, lowercase, number and special character (!, @, $, %, ^, &, *, +, #)")
+                    
         signup_confirm = st.text_input("Confirm Password", type="password", key="signup_confirm")
 
         if st.button("Create Account", key="signup_btn"):
