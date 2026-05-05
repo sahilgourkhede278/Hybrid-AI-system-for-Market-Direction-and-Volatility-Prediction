@@ -31,93 +31,160 @@ st.set_page_config(page_title="AI Market Dashboard", layout="wide")
 def apply_custom_ui():
     st.markdown("""
     <style>
-
     .stApp {
-        background: linear-gradient(135deg, #fdfcfb, #f5f7fa);
-        color: #1f2937;
+        background: linear-gradient(135deg, #020617 0%, #0f172a 45%, #111827 100%);
+        color: #f8fafc;
     }
 
     h1, h2, h3 {
-        color: #111827 !important;
+        color: #f8fafc !important;
         font-weight: 800 !important;
     }
 
-    /* Cards */
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+
     .custom-card {
-        background: #ffffff;
+        background: rgba(255,255,255,0.08);
         padding: 22px;
-        border-radius: 18px;
-        border: 1px solid #e5e7eb;
-        box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        border-radius: 22px;
+        border: 1px solid rgba(255,255,255,0.12);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.28);
         margin-bottom: 18px;
     }
 
-    /* Hero Title */
     .hero-title {
-        font-size: 36px;
+        font-size: 38px;
         font-weight: 900;
-        color: #374151;
-        margin-bottom: 6px;
+        background: linear-gradient(90deg, #38bdf8, #a78bfa, #22c55e);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 8px;
     }
 
     .hero-subtitle {
-        color: #6b7280;
-        font-size: 15px;
-        margin-bottom: 15px;
+        color: #cbd5e1;
+        font-size: 16px;
+        margin-bottom: 4px;
     }
 
     .section-badge {
         display: inline-block;
-        background: #e0f2fe;
-        color: #0369a1;
-        padding: 6px 12px;
+        background: rgba(59,130,246,0.18);
+        color: #bfdbfe;
+        padding: 7px 14px;
         border-radius: 999px;
         font-weight: 700;
         margin-bottom: 10px;
+        border: 1px solid rgba(147,197,253,0.25);
     }
 
-    /* Buttons */
+    .glass-panel {
+        background: rgba(255,255,255,0.07);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 0 10px 26px rgba(0,0,0,0.25);
+        margin-bottom: 16px;
+    }
+
+    .stMetric {
+        background: rgba(255,255,255,0.08);
+        padding: 18px;
+        border-radius: 18px;
+        border: 1px solid rgba(255,255,255,0.12);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    }
+
     div.stButton > button {
-        background: #e0e7ff;
-        color: #3730a3;
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+        color: white;
         border: none;
-        border-radius: 12px;
-        height: 44px;
-        font-weight: 700;
-        transition: 0.2s ease;
+        border-radius: 14px;
+        min-height: 46px;
+        font-weight: 800;
+        transition: 0.25s ease;
     }
 
     div.stButton > button:hover {
-        background: #c7d2fe;
-        transform: scale(1.02);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(37,99,235,0.45);
+        color: white;
     }
 
-    /* Link Button */
     div[data-testid="stLinkButton"] a {
-        background: #dcfce7;
-        color: #166534 !important;
-        border-radius: 12px;
-        font-weight: 700;
+        background: linear-gradient(135deg, #16a34a, #22c55e);
+        color: white !important;
+        border-radius: 14px;
+        min-height: 46px;
+        font-weight: 800;
+        border: none;
         text-decoration: none;
+        transition: 0.25s ease;
     }
 
     div[data-testid="stLinkButton"] a:hover {
-        background: #bbf7d0;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(34,197,94,0.45);
     }
 
-    /* Inputs */
-    input, textarea {
-        border-radius: 10px !important;
-        border: 1px solid #d1d5db !important;
+    div[data-testid="stTextInput"] input,
+    div[data-testid="stNumberInput"] input,
+    div[data-testid="stDateInput"] input {
+        border-radius: 12px !important;
+        border: 1px solid rgba(255,255,255,0.18) !important;
     }
 
-    /* Table */
+    div[data-testid="stSelectbox"] div {
+        border-radius: 12px !important;
+    }
+
     div[data-testid="stDataFrame"] {
-        border-radius: 16px;
+        border-radius: 18px;
         overflow: hidden;
-        border: 1px solid #e5e7eb;
+        border: 1px solid rgba(255,255,255,0.12);
     }
 
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 10px;
+    }
+
+    .stTabs [data-baseweb="tab"] {
+        background: rgba(255,255,255,0.08);
+        border-radius: 14px;
+        color: #f8fafc;
+        font-weight: 800;
+        border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #2563eb, #7c3aed) !important;
+        color: white !important;
+    }
+
+    .trade-card {
+        background: linear-gradient(135deg, rgba(17,24,39,0.96), rgba(31,41,55,0.92));
+        padding: 22px;
+        border-radius: 18px;
+        border: 1px solid rgba(255,255,255,0.12);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+        margin-bottom: 20px;
+    }
+
+    .trade-title {
+        color: white;
+        font-size: 24px;
+        font-weight: 900;
+        margin-bottom: 6px;
+    }
+
+    .trade-subtitle {
+        color: #d1d5db;
+        font-size: 15px;
+        margin-bottom: 4px;
+    }
     </style>
     """, unsafe_allow_html=True)
 
