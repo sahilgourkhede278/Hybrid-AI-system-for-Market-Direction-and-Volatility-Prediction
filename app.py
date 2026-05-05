@@ -972,7 +972,12 @@ if not st.session_state.logged_in:
 
         signup_name = st.text_input("Full Name", key="signup_name")
         signup_username = st.text_input("Choose Username", key="signup_username")
-        signup_password = st.text_input("Choose Password", type="password", key="signup_password")
+        signup_password = st.text_input(
+            "Choose Password",
+            type="password",
+            key="signup_password",
+            help="Password strength updates after typing due to Streamlit rerun behavior."
+        )
 
         strength = check_password_strength(signup_password) if signup_password else 0
         progress = strength / 5
