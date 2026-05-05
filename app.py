@@ -102,7 +102,10 @@ PRACTICE_STOCKS = {k: v for k, v in STOCKS.items() if k != "NIFTY 50"}
 # DATABASE
 # =====================================================
 def get_connection():
-    return psycopg2.connect(st.secrets["DATABASE_URL"])
+    return psycopg2.connect(
+        st.secrets["DATABASE_URL"],
+        connect_timeout=10
+    )
 
 
 def init_db():
