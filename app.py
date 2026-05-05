@@ -1,3 +1,4 @@
+import re
 import uuid
 from streamlit_cookies_manager import EncryptedCookieManager
 from zoneinfo import ZoneInfo
@@ -194,6 +195,23 @@ def init_db():
 # =====================================================
 # AUTHENTICATION SYSTEM
 # =====================================================
+
+def check_password_strength(password):
+    score = 0
+    
+    if len(password) >= 8:
+        score += 1
+    if re.search(r"[A-Z]", password):
+        score += 1
+    if re.search(r"[a-z]", password):
+        score += 1
+    if re.search(r"[0-9]", password):
+        score += 1
+    if re.search(r"[!@$%^&*+#]", password):
+        score += 1
+    
+    return score
+
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
@@ -951,6 +969,23 @@ if not st.session_state.logged_in:
         signup_name = st.text_input("Full Name", key="signup_name")
         signup_username = st.text_input("Choose Username", key="signup_username")
         signup_password = st.text_input("Choose Password", type="password", key="signup_password")
+
+        if signup_password:
+            strength = check_password_strength(signup_password)
+        
+            progress = strength / 5
+        
+            st.progress(progress)
+        
+            if strength <= 2:
+                st.error("Weak Password ❌")
+            elif strength == 3 or strength == 4:
+                st.warning("Medium Password ⚠️")
+            else:
+                st.success("Strong Password ✅")
+        
+            st.caption("Use at least 8 characters, uppercase, lowercase, number and special character (!, @, $, %, ^, &, *, +, #)")
+            
         signup_confirm = st.text_input("Confirm Password", type="password", key="signup_confirm")
 
         if st.button("Create Account", key="signup_btn"):
