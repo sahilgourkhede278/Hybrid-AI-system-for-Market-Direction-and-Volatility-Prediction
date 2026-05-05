@@ -1267,18 +1267,8 @@ elif st.session_state.page == "networth":
 
     st.title("💰 Net Worth Calculator")
 
-    back_col, trade_col = st.columns(2)
-
-    with back_col:
-        if st.button("⬅ Back to Dashboard", use_container_width=True):
+    if st.button("⬅ Back to Dashboard"):
             go_to_page("dashboard")
-    
-    with trade_col:
-        st.link_button(
-            "🚀 Start Trading Now",
-            "https://login.upstox.com/",
-            use_container_width=True
-        )
 
     saved_networth = get_networth_data(user_id)
 
@@ -1423,8 +1413,18 @@ elif st.session_state.page == "dummy_market":
     else:
         st.error("🔴 Market is Closed / Holiday")
 
-    if st.button("⬅ Back to Dashboard"):
-        go_to_page("dashboard")
+    back_col, trade_col = st.columns(2)
+
+    with back_col:
+        if st.button("⬅ Back to Dashboard", use_container_width=True):
+            go_to_page("dashboard")
+    
+    with trade_col:
+        st.link_button(
+            "🚀 Start Trading Now",
+            "https://login.upstox.com/",
+            use_container_width=True
+        )
 
     current_balance = get_dummy_balance(user_id)
     st.metric("Virtual Balance", f"₹ {round(current_balance, 2)}")
