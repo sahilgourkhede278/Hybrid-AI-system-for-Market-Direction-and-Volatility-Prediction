@@ -39,7 +39,6 @@ if not cookies.ready():
 # STOCK MASTER LIST (50+ STOCKS)
 # =====================================================
 STOCKS = {
-    "Reliance": "RELIANCE.NS",
     "TCS": "TCS.NS",
     "Infosys": "INFY.NS",
     "HDFC Bank": "HDFCBANK.NS",
@@ -94,6 +93,8 @@ STOCKS = {
     "Pidilite": "PIDILITIND.NS",
     "DLF": "DLF.NS",
     "Jio Financial Services": "JIOFIN.NS"
+    "Reliance": "RELIANCE.NS",
+
 }
 
 PORTFOLIO_STOCKS = {k: v for k, v in STOCKS.items() if k != "NIFTY 50"}
