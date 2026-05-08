@@ -92,8 +92,8 @@ STOCKS = {
     "Trent": "TRENT.NS",
     "Pidilite": "PIDILITIND.NS",
     "DLF": "DLF.NS",
-    "Jio Financial Services": "JIOFIN.NS"
-    "Reliance": "RELIANCE.NS",
+    "Jio Financial Services": "JIOFIN.NS",
+    "Reliance": "RELIANCE.NS"
 
 }
 
